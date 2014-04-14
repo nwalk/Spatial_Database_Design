@@ -1,0 +1,71 @@
+CREATE TABLE h_building(
+  id serial PRIMARY KEY,
+  building_name varchar,
+  year integer,
+  location_info varchar,
+  characteristics_summary varchar,
+  characteristics_detail varchar,
+  geom geometry(Polygon,4326));
+
+CREATE TABLE h_property(
+  id serial PRIMARY KEY,
+  property_name varchar,
+  year integer,
+  location_info varchar,
+  characteristics_summary varchar,
+  characteristics_detail varchar,
+  geom geometry(Polygon,4326));
+
+CREATE TABLE h_district(
+  id serial PRIMARY KEY,
+  location_info varchar,
+  characteristics varchar,
+  year integer,
+  geom geometry(Polygon,4326));
+
+CREATE TABLE h_element(
+  element_id serial,
+  h_property_id integer,
+  element_name varchar,
+  element_type varchar,
+  year integer,
+  characteristics varchar,
+  geom geometry(Polygon,4326));
+
+CREATE TABLE h_element(id serial PRIMARY KEY, type varchar);
+
+CREATE TABLE propelem(
+id serial, he_id integer REFERENCES h_element(id),
+ hp_id integer REFERENCES h_property(id));
+
+CREATE TABLE bldgelem(
+id serial, he_id integer REFERENCES h_element(id),
+ hb_id integer REFERENCES h_building(id));
+
+
+
+ALTER TABLE h_building
+ADD CONSTRAINT withinprop
+CHECK (bldg_within_prop(h_building.geom));
+
+ALTER TABLE h_property
+ADD CONSTRAINT withindist
+CHECK (prop_within_dist(h_property.geom));
+
+
+
+CREATE OR REPLACE FUNCTION bldg_within_prop(g geometry)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN ST_Within(g, (SELECT geom FROM h_property));
+END;
+$$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION prop_within_dist(g geometry)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN ST_Within(g, (SELECT geom FROM h_district));
+END;
+$$ LANGUAGE plpgsql;
+ 
